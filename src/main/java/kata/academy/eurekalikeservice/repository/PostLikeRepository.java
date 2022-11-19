@@ -14,10 +14,10 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
 
     @Modifying
     @Query("""
-            DELETE
-            FROM PostLike pl
-            WHERE pl.postId = :postId
-                                """)
+                    DELETE
+                    FROM PostLike pl
+                    WHERE pl.postId = :postId
+           """)
     void deleteByPostId(Long postId);
 
     @Query(nativeQuery = true, value =
@@ -28,10 +28,12 @@ public interface PostLikeRepository extends JpaRepository<PostLike, Long> {
                     GROUP BY pl.post_id
                     ORDER BY COUNT(pl.id) DESC
                     LIMIT :count
-                    """)
+            """)
     List<Long> getTopPostIdsByCount(Integer count);
 
     int countByPostIdAndPositive(Long postId, Boolean positive);
+
+    int countAllByPostIdAndPositive(Long postId, Boolean positive);
 
     Optional<PostLike> findByPostIdAndUserId(Long postId, Long userId);
 }
