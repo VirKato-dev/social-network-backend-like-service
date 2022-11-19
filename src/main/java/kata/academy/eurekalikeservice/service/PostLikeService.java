@@ -7,9 +7,9 @@ import java.util.Optional;
 
 public interface PostLikeService {
 
-    PostLike addPostLike(PostLike postLike);
+    void addPostLike(PostLike postLike);
 
-    PostLike updatePostLike(PostLike postLike);
+    void updatePostLike(PostLike postLike);
 
     void delete(PostLike postLike);
 

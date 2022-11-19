@@ -23,8 +23,8 @@ public class PostLikeServiceImpl implements PostLikeService {
 
     @CacheEvict(key = "#postLike.postId + '-' + #postLike.positive")
     @Override
-    public PostLike addPostLike(PostLike postLike) {
-        return postLikeRepository.save(postLike);
+    public void addPostLike(PostLike postLike) {
+        postLikeRepository.save(postLike);
     }
 
     @Caching(evict = {
@@ -32,8 +32,8 @@ public class PostLikeServiceImpl implements PostLikeService {
             @CacheEvict(key = "#postLike.postId + '-' + false")
     })
     @Override
-    public PostLike updatePostLike(PostLike postLike) {
-        return postLikeRepository.save(postLike);
+    public void updatePostLike(PostLike postLike) {
+        postLikeRepository.save(postLike);
     }
 
     @CacheEvict(key = "#postLike.postId + '-' + #postLike.positive")

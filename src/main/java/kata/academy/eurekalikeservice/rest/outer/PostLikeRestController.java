@@ -31,7 +31,7 @@ public class PostLikeRestController {
     private final ContentServiceFeignClient contentServiceFeignClient;
 
     @PostMapping("/{postId}")
-    public ResponseEntity<PostLike> addPostLike(@RequestParam Boolean positive,
+    public ResponseEntity<Void> addPostLike(@RequestParam Boolean positive,
                                                 @PathVariable @Positive Long postId,
                                                 @RequestHeader @Positive Long userId) {
         ApiValidationUtil.requireTrue(contentServiceFeignClient.existsByPostId(postId),
@@ -44,11 +44,12 @@ public class PostLikeRestController {
                 .postId(postId)
                 .userId(userId)
                 .build();
-        return ResponseEntity.ok(postLikeService.addPostLike(postLike));
+        postLikeService.addPostLike(postLike);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("/{postId}")
-    public ResponseEntity<PostLike> updatePostLike(@RequestParam Boolean positive,
+    public ResponseEntity<Void> updatePostLike(@RequestParam Boolean positive,
                                                    @PathVariable @Positive Long postId,
                                                    @RequestHeader @Positive Long userId) {
         Optional<PostLike> postLikeOptional = postLikeService.findByPostIdAndUserId(postId, userId);
@@ -56,7 +57,8 @@ public class PostLikeRestController {
                 String.format("Лайк с postId %d, userId %d нет в базе данных", postId, userId));
         PostLike postLike = postLikeOptional.get();
         postLike.setPositive(positive);
-        return ResponseEntity.ok(postLikeService.updatePostLike(postLike));
+        postLikeService.updatePostLike(postLike);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{postId}")
