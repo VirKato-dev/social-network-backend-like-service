@@ -1,28 +1,15 @@
 package kata.academy.eurekalikeservice.outer;
 
 import kata.academy.eurekalikeservice.SpringSimpleContextTest;
-import kata.academy.eurekalikeservice.api.Data;
 import kata.academy.eurekalikeservice.feign.ContentServiceFeignClient;
-import kata.academy.eurekalikeservice.model.entity.PostLike;
-import kata.academy.eurekalikeservice.util.ApiValidationUtil;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.MockBeans;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-
-import javax.validation.constraints.Positive;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
@@ -100,8 +87,10 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     }
 
     @Test
-    public void deletePostLike_PostLikeUnsuccessTest() throws Exception {
-        long postId = 31L;
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_PostLikeFailTest/Before.sql")
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_PostLikeFailTest/After.sql")
+    public void deletePostLike_PostLikeFailTest() throws Exception {
+        long postId = 4L;
         long userId = 1L;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(delete("/api/v1/likes/posts/{postId}", postId)
@@ -114,15 +103,18 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     }
 
     @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/getPostLikeCount_SuccessfulTest/Before.sql")
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/getPostLikeCount_SuccessfulTest/After.sql")
     public void getPostLikeCount_SuccessfulTest() throws Exception {
-        long postId = 12L;
+        long postId = 2L;
         String positiveState = String.valueOf(true);
+        int result = 1;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(get("/api/v1/likes/posts/{postId}/count", postId)
                         .param("positive", positiveState)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Is.is(4)));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Is.is(result)));
     }
 
 }

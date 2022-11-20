@@ -67,7 +67,7 @@ public class PostLikeServiceImpl implements PostLikeService {
     @Transactional(readOnly = true)
     @Override
     public int countByPostIdAndPositive(Long postId, Boolean positive) {
-        return postLikeRepository.countAllByPostIdAndPositive(postId, positive);
+        return postLikeRepository.countByPostIdAndPositive(postId, positive);
     }
 
     @Transactional(readOnly = true)
