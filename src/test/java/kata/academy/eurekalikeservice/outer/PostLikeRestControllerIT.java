@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -29,8 +30,8 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     public void addPostLike_SuccessfulTest() throws Exception {
         Long postId = 1L;
         Long userId = 1L;
-        doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         boolean positive = true;
+        doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(post("/api/v1/likes/posts/{postId}", postId)
                         .header("userId", userId.toString())
                         .param("positive", String.valueOf(positive))
@@ -56,10 +57,11 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     public void addPostLike_PostLikeExistsTest() throws Exception {
         Long postId = 1L;
         Long userId = 1L;
+        boolean positive = true;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(post("/api/v1/likes/posts/{postId}", postId)
                         .header("userId", userId.toString())
-                        .param("positive", String.valueOf(true))
+                        .param("positive", String.valueOf(positive))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.text", Is.is(
@@ -69,24 +71,72 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     }
 
     @Test
-    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/addPostLike_PostLikeExistsTest/Before.sql")
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/addPostLike_PostLikeExistsTest/After.sql")
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/updatePostLike_SuccessfulTest/Before.sql")
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/updatePostLike_SuccessfulTest/After.sql")
     public void updatePostLike_SuccessfulTest() throws Exception {
         Long postId = 1L;
         long userId = 1L;
+        boolean positive = true;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(put("/api/v1/likes/posts/{postId}", postId)
                         .header("userId", Long.toString(userId))
-                        .param("positive", String.valueOf(true))
+                        .param("positive", String.valueOf(positive))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+        assertTrue(entityManager.createQuery("""
+                        SELECT COUNT(pl.id) > 0
+                        FROM PostLike pl
+                        WHERE pl.postId = :postId
+                        AND pl.userId = :userId
+                        AND pl.positive = :positive
+                        """, Boolean.class)
+                .setParameter("postId", postId)
+                .setParameter("userId", userId)
+                .setParameter("positive", positive)
+                .getSingleResult());
     }
 
     @Test
-    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_PostLikeFailTest/Before.sql")
-    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_PostLikeFailTest/After.sql")
-    public void deletePostLike_PostLikeFailTest() throws Exception {
-        long postId = 4L;
+    public void updatePostLike_FailTest() throws Exception {
+        Long postId = 1L;
+        long userId = 1L;
+        boolean positive = true;
+        doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
+        mockMvc.perform(put("/api/v1/likes/posts/{postId}", postId)
+                        .header("userId", Long.toString(userId))
+                        .param("positive", String.valueOf(positive))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.text", Is.is(
+                        String.format("Лайк с postId %d, userId %d нет в базе данных", postId, userId)
+                )));
+    }
+
+    @Test
+    @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_SuccessfulTest/Before.sql")
+    @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/deletePostLike_SuccessfulTest/After.sql")
+    public void deletePostLike_SuccessfulTest() throws Exception {
+        Long postId = 1L;
+        long userId = 1L;
+        doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
+        mockMvc.perform(delete("/api/v1/likes/posts/{postId}", postId)
+                        .header("userId", Long.toString(userId))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        assertFalse(entityManager.createQuery("""
+                        SELECT COUNT(pl.id) > 0
+                        FROM PostLike pl
+                        WHERE pl.postId = :postId
+                        AND pl.userId = :userId
+                        """, Boolean.class)
+                .setParameter("postId", postId)
+                .setParameter("userId", userId)
+                .getSingleResult());
+    }
+
+    @Test
+    public void deletePostLike_FailTest() throws Exception {
+        long postId = 1L;
         long userId = 1L;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(delete("/api/v1/likes/posts/{postId}", postId)
@@ -102,15 +152,15 @@ public class PostLikeRestControllerIT extends SpringSimpleContextTest {
     @Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/getPostLikeCount_SuccessfulTest/Before.sql")
     @Sql(executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD, value = "/scripts/outer/PostLikeRestController/getPostLikeCount_SuccessfulTest/After.sql")
     public void getPostLikeCount_SuccessfulTest() throws Exception {
-        long postId = 2L;
+        long postId = 1L;
         String positiveState = String.valueOf(true);
-        int result = 1;
+        int countOfPositiveLikes = 1;
         doReturn(Boolean.TRUE).when(contentServiceFeignClient).existsByPostId(postId);
         mockMvc.perform(get("/api/v1/likes/posts/{postId}/count", postId)
                         .param("positive", positiveState)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Is.is(result)));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Is.is(countOfPositiveLikes)));
     }
 
 }
